@@ -1,17 +1,13 @@
 import { useEffect, useState } from "react";
 
-type useDebounceProps = {
-  value?: string;
-  delay: number;
-};
 
-export const useDebounce = (value: string, delay = 500) => {
-  const [debouncedValue, setDebounceValue] = useState(value);
+export const useDebounce = (location: string, delay = 500) => {
+  const [debouncedLocationValue, setDebounceLocationValue] = useState(location);
 
   useEffect(() => {
     const id = setTimeout(() => {
       console.log("setting new timeout");
-      setDebounceValue(value);
+      setDebounceLocationValue(location);
     }, delay);
 
     // Cleanup function
@@ -19,7 +15,7 @@ export const useDebounce = (value: string, delay = 500) => {
       console.log("clearing the timeout");
       clearTimeout(id);
     };
-  }, [value, delay]);
+  }, [location, delay]);
 
-  return <div>useDebounce</div>;
+  return { debouncedLocationValue };
 };

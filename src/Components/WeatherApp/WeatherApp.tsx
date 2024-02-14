@@ -6,37 +6,53 @@ import wind_icon from "../Assets/wind.png";
 import humidity_icon from "../Assets/humidity.png";
 import { WeatherIcon } from "./WeatherIcon";
 import Image from "next/image";
-import { ChangeEvent, useState } from "react";
-
+import { ChangeEvent, MouseEvent, useEffect, useState } from "react";
+import { useDebounce } from "./useDebounce";
+import { useWeatherDataAPI } from "./useWeatherDataAPI";
 export const WeatherApp = () => {
-  const [location, setLocation] = useState("Girona");
+  const [location, setLocation] = useState<string>("Girona");
 
-  const [temperature, setTemperature] = useState("");
-  const [humidity, setHumidity] = useState("");
-  const [windSpeed, setWindSpeed] = useState("");
-  const [conditions, setConditions] = useState([]);
+  const [conditions, setConditions] = useState<
+    Array<{ id: number; main: string; description: string; icon: string }>
+  >([]);
+  const [temperature, setTemperature] = useState<string>("");
+  const [humidity, setHumidity] = useState<string>("");
+  const [windSpeed, setWindSpeed] = useState<string>("");
+
+  const debouncedLocationValue = useDebounce(location, 750);
+  const { data, isLoading, error } = useWeatherDataAPI(debouncedLocationValue);
+
+  useEffect(() => {
+    if (data) {
+      const temperature = Math.floor(data?.main?.temp ?? 0);
+      setTemperature(String(temperature));
+      setHumidity(String(data.main.humidity));
+      setWindSpeed(String(data.wind.speed));
+      setConditions((prevConditions) => [...prevConditions, ...data.weather]);
+    }
+  }, [data]);
 
   const handleChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    //console.log("handleChange==========e", e);
     const searchLocation = e.target.value;
     setLocation(searchLocation);
+    // console.log("handleChange==========searchLocation", searchLocation);
+    // console.log("handleChange==========data", data);
+  };
 
-    const url = `https://api.openweathermap.org/data/2.5/weather?q=${searchLocation}&units=Metric&appid=${process.env.NEXT_PUBLIC_BASE_WEATHER_MAP_API_KEY}`;
+  const handleClick = (
+    event: MouseEvent<HTMLDivElement, globalThis.MouseEvent>
+  ): void => {
+    console.log("handleClick==========searchLocation", event);
+    console.log("handleClick==========data", data);
 
-    if (searchLocation.length > 3) {
-      const response = await fetch(url);
-      const data = await response.json();
-
-      if (data && data !== undefined) {
-        let temperature = Math.floor(data.main?.temp);
-        setTemperature(String(temperature));
-        setHumidity(data.main?.humidity);
-        setWindSpeed(data.wind?.speed);
-        setConditions(data.weather);
-      }
-    }
+    alert("handleClick image");
+    //onLocation(location)
+    event.preventDefault();
   };
 
   return (
+    //isloading
     <div className="container">
       <div className="top-bar">
         <input
@@ -45,7 +61,12 @@ export const WeatherApp = () => {
           placeholder="Search"
           onChange={handleChange}
         />
-        <div className="search-icon">
+
+        <div
+          className="search-icon"
+          tabIndex={0}
+          onClick={(event) => handleClick(event)}
+        >
           <Image src={search_icon} alt="Search icon" />
         </div>
       </div>
@@ -70,6 +91,7 @@ export const WeatherApp = () => {
           <Image src={wind_icon} alt="Wind icon" className="icon" />
           <div className="data">
             <div className="humidity-percent">{`${windSpeed} km/h`}</div>
+            {/* <input className="humidity-percent" type="text" value={`${windSpeed} km/h`} onChange={(e) => setWindSpeed(e.target.value)} placeholder="Search" autoFocus /> */}
             <div className="text">Wind speed</div>
           </div>
         </div>
